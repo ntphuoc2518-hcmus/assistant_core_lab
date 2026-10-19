@@ -1,11 +1,11 @@
-import pytest
 from pathlib import Path
+
+import pytest
 
 from assistant_core.config import Settings
 from assistant_core.knowledge import Handbook, OfficeDirectory
 from assistant_core.responder import StubLLMResponder
 from assistant_core.service import AssistantService
-
 
 @pytest.fixture
 def settings() -> Settings:
