@@ -1,5 +1,5 @@
-from pathlib import Path
 import pytest
+from pathlib import Path
 
 from assistant_core.config import Settings
 from assistant_core.knowledge import Handbook, OfficeDirectory
