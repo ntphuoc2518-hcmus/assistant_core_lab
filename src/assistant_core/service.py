@@ -1,10 +1,9 @@
 import logging
-
 from assistant_core.errors import ProviderError
 from assistant_core.models import Intent, Message, Response, Source
-from assistant_core.responder import TemplateResponder
 from assistant_core.router import route
-from assistant_core.tools import parse_credits, tuition
+from assistant_core.responder import TemplateResponder
+from assistant_core.tools import tuition, parse_credits
 
 log = logging.getLogger("assistant_core")
 
@@ -21,7 +20,10 @@ class AssistantService:
         intent = route(msg.text, self.offices.names)
 
         if intent is Intent.GREETING:
-            return Response(answer="Hello! I can help with offices, fees and rules.", intent=intent)
+            return Response(
+                answer="Hello! I can help with offices, fees and rules.",
+                intent=intent
+            )
 
         if intent is Intent.FEE:
             try:
@@ -31,17 +33,27 @@ class AssistantService:
                     retake=retake_val,
                     rate=self.settings.credit_rate_vnd,
                     retake_multiplier=self.settings.retake_multiplier,
-                    max_credits=self.settings.max_credits,
+                    max_credits=self.settings.max_credits
                 )
-                return Response(answer=f"Your tuition is {total:,} VND", intent=intent)
+                return Response(
+                    answer=f"Your tuition is {total:,} VND",
+                    intent=intent
+                )
             except Exception as e: # noqa: BLE001
-                return Response(answer=str(e), intent=intent, degraded=True)
+                return Response(
+                    answer=str(e),
+                    intent=intent,
+                    degraded=True
+                )
 
         if intent is Intent.OFFICE:
             o = self.offices.find(msg.text)
             if not o:
                 return Response(answer="Sorry, I couldn't find that office.", intent=intent)
-            return Response(answer=f"{o.name}: room {o.room}, open {o.hours}", intent=intent)
+            return Response(
+                answer=f"{o.name}: room {o.room}, open {o.hours}",
+                intent=intent
+            )
 
         return self._rule(msg.text)
 
@@ -49,12 +61,21 @@ class AssistantService:
         rule = self.handbook.search(text)
         if rule is None:
             return Response(answer="Sorry, I don't know that yet.", intent=Intent.UNKNOWN)
-
+        
         sources = [Source(id=rule.id, title=rule.title)]
         try:
             answer = self.responder.explain(text, rule)
-            return Response(answer=answer, intent=Intent.RULE, sources=sources)
+            return Response(
+                answer=answer,
+                intent=Intent.RULE,
+                sources=sources
+            )
         except ProviderError:
             log.warning("provider failed; using template fallback", extra={"degraded": True, "intent": "rule"})
             answer = self.fallback.explain(text, rule)
-            return Response(answer=answer, intent=Intent.RULE, sources=sources, degraded=True)
+            return Response(
+                answer=answer,
+                intent=Intent.RULE,
+                sources=sources,
+                degraded=True
+            )
