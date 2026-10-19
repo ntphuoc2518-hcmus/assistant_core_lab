@@ -7,6 +7,7 @@ from assistant_core.knowledge import Handbook, OfficeDirectory
 from assistant_core.responder import StubLLMResponder
 from assistant_core.service import AssistantService
 
+
 @pytest.fixture
 def settings() -> Settings:
     """Provide default test configuration settings."""
