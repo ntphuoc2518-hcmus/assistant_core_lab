@@ -20,3 +20,7 @@ class Response(BaseModel):
  intent: Intent
  sources: list[Source] = []
  degraded: bool = False
+
+class Rule(BaseModel):
+    id: str
+    text: str
