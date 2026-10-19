@@ -1,9 +1,10 @@
 import logging
+
 from assistant_core.errors import ProviderError
 from assistant_core.models import Intent, Message, Response, Source
-from assistant_core.router import route
 from assistant_core.responder import TemplateResponder
-from assistant_core.tools import tuition, parse_credits
+from assistant_core.router import route
+from assistant_core.tools import parse_credits, tuition
 
 log = logging.getLogger("assistant_core")
 
@@ -39,7 +40,12 @@ class AssistantService:
                     answer=f"Your tuition is {total:,} VND",
                     intent=intent
                 )
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
+                return Response(
+                    answer=str(e),
+                    intent=intent,
+                    degraded=True
+                )
                 return Response(
                     answer=str(e),
                     intent=intent,
