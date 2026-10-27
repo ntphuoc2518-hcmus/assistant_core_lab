@@ -1,8 +1,10 @@
 import logging
 
+from assistant_core.config import Settings
 from assistant_core.errors import ProviderError
+from assistant_core.knowledge import Handbook, OfficeDirectory
 from assistant_core.models import Intent, Message, Response, Source
-from assistant_core.responder import TemplateResponder
+from assistant_core.responder import StubLLMResponder, TemplateResponder
 from assistant_core.router import route
 from assistant_core.tools import parse_credits, tuition
 
@@ -89,3 +91,11 @@ class AssistantService:
                 sources=sources,
                 degraded=True,
             )
+
+def build_service(settings: Settings) -> AssistantService:
+    """Build the assistant service using the configured resources."""
+    offices = OfficeDirectory.from_csv(settings.data_dir / "offices.csv")
+    handbook = Handbook.from_json(settings.data_dir / "handbook.json")
+    responder = StubLLMResponder()
+
+    return AssistantService(settings, offices, handbook, responder)
