@@ -31,7 +31,7 @@ def create_app(
     weather = weather or WeatherClient(
         settings.weather_url, settings.campus_lat, settings.campus_lon, timeout_s=settings.weather_timeout_s
     )
-    limiter = RateLimiter(settings.rate_limit_per_min)
+    limiter = RateLimiter(getattr(settings, "rate_limit_per_min", 60))
     if repo is None:
         engine = make_engine(settings.database_url)
         init_db(engine)

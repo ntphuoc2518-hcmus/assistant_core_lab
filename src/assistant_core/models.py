@@ -1,4 +1,7 @@
-from dataclasses import dataclass
+"""Typed request/response models — the service's public contract."""
+
+from __future__ import annotations
+
 from enum import Enum
 
 from pydantic import BaseModel, Field
@@ -10,20 +13,6 @@ class Intent(str, Enum):
     OFFICE = "office"
     RULE = "rule"
     UNKNOWN = "unknown"
-
-
-@dataclass
-class Office:
-    name: str
-    room: str
-    hours: str
-
-
-@dataclass
-class Rule:
-    id: str
-    title: str
-    text: str
 
 
 class Message(BaseModel):
@@ -38,6 +27,6 @@ class Source(BaseModel):
 
 class Response(BaseModel):
     answer: str
-    intent: Intent | str = Intent.UNKNOWN
+    intent: Intent
     sources: list[Source] = []
-    degraded: bool = False
+    degraded: bool = False  # True when a fallback path was used
