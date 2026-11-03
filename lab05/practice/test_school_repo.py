@@ -2,7 +2,6 @@ import sqlite3
 from pathlib import Path
 
 import pytest
-
 import school_repo as repo
 
 SQL = (Path(__file__).parent / "school.sql").read_text(encoding="utf-8")

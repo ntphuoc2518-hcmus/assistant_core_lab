@@ -42,5 +42,7 @@ for q in sorted(ref, key=lambda k: int(k[1:])):
     want, ordered = ref[q]["rows"], ref[q]["ordered"]
     same = got == want if ordered else sorted(map(repr, got)) == sorted(map(repr, want))
     score += same
-    print(f"{q:4} {'OK ' if same else 'NO '} " + ("" if same else f"expected {want[:3]}{' ...' if len(want) > 3 else ''}, got {got[:3]}"))
+    err_detail = f"expected {want[:3]}{' ...' if len(want) > 3 else ''}, got {got[:3]}"
+    msg = "" if same else err_detail
+    print(f"{q:4} {'OK ' if same else 'NO '} {msg}")
 print(f"\nScore: {score}/{len(ref)}")
