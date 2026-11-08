@@ -1,5 +1,5 @@
 
-"""FastAPI application — Lab 4 STARTER.
+"""FastAPI application — Lab 4 API with Lab 5 persistence (SQLite via the Repository).
 
 Run:
     uvicorn assistant_api.main:create_app --factory --reload
@@ -14,13 +14,16 @@ Endpoints (v1):
 
 from __future__ import annotations
 
+import logging
+import time
 import uuid
-from datetime import datetime, timezone
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Request, status
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from sqlalchemy.exc import SQLAlchemyError
 
+from assistant_api.db import Repository, init_db, make_engine
 from assistant_api.schemas import (
     ChatRequest,
     ChatResponse,
@@ -32,12 +35,26 @@ from assistant_api.schemas import (
 from assistant_api.weather import ExternalServiceError, WeatherClient
 from assistant_core import AssistantService, Message, build_service
 from assistant_core.config import Settings, load_settings
+from assistant_core.errors import ConfigError
+from assistant_core.models import Intent
+
+log = logging.getLogger("assistant_api")
+
+
+def build_repository(settings: Settings) -> Repository:
+    """Open the configured database (a persistent SQLite file by default) and create missing tables."""
+    if not settings.session_salt:
+        raise ConfigError("SESSION_SALT is required to hash session ids (set it in .env; see .env.example)")
+    engine = make_engine(settings.database_url)
+    init_db(engine)
+    return Repository(engine, settings.session_salt)
 
 
 def create_app(
     settings: Settings | None = None,
     service: AssistantService | None = None,
     weather: WeatherClient | None = None,
+    repo: Repository | None = None,
 ) -> FastAPI:
     settings = settings or load_settings()
     service = service or build_service(settings)
@@ -48,7 +65,7 @@ def create_app(
         timeout_s=settings.weather_timeout_s,
     )
 
-    feedback_store: list[FeedbackOut] = []
+    repo = repo or build_repository(settings)
 
     app = FastAPI(
         title="Study Assistant API",
@@ -104,16 +121,34 @@ def create_app(
     )
     def chat(req: ChatRequest, request: Request) -> ChatResponse:
         # Bonus rate limiting will be added later.
+        started = time.perf_counter()
         resp = service.handle(
             Message(
                 text=req.message,
                 session_id=req.session_id,
             )
         )
+        latency_ms = (time.perf_counter() - started) * 1000
+        request_id = uuid.uuid4().hex[:12]
+
+        # Store metadata only — never the message text or the raw session id.
+        try:
+            repo.record_interaction(
+                raw_session=req.session_id,
+                request_id=request_id,
+                intent=Intent(resp.intent).value,
+                topic=resp.sources[0].id if resp.sources else None,
+                resolved=resp.intent != Intent.UNKNOWN,
+                degraded=resp.degraded,
+                latency_ms=round(latency_ms, 2),
+            )
+        except SQLAlchemyError:
+            # The answer is still useful; feedback for this request_id will return 404.
+            log.exception("could not record interaction")
 
         return ChatResponse(
             **resp.model_dump(),
-            request_id=uuid.uuid4().hex[:12],
+            request_id=request_id,
         )
 
     # T2: POST /v1/feedback
@@ -122,16 +157,16 @@ def create_app(
         response_model=FeedbackOut,
         status_code=status.HTTP_201_CREATED,
         tags=["feedback"],
+        responses={404: {"model": ErrorResponse}, 422: {"model": ErrorResponse}},
     )
     def add_feedback(fb: FeedbackIn) -> FeedbackOut:
-        item = FeedbackOut(
-            **fb.model_dump(),
-            id=len(feedback_store) + 1,
-            created_at=datetime.now(timezone.utc),
-        )
-
-        feedback_store.append(item)
-        return item
+        saved = repo.add_feedback(fb.request_id, fb.rating, fb.comment)
+        if saved is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Request not found",
+            )
+        return FeedbackOut.model_validate(saved.model_dump())
 
     # T3: GET /v1/feedback (admin only)
     @app.get(
@@ -139,9 +174,10 @@ def create_app(
         response_model=list[FeedbackOut],
         tags=["feedback"],
         dependencies=[Depends(require_admin)],
+        responses={401: {"model": ErrorResponse}},
     )
-    def list_feedback() -> list[FeedbackOut]:
-        return feedback_store
+    def list_feedback(limit: int = Query(default=100, ge=1, le=100)) -> list[FeedbackOut]:
+        return [FeedbackOut.model_validate(fb.model_dump()) for fb in repo.list_feedback(limit)]
 
     # T4: GET /v1/weather
     @app.get(

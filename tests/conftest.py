@@ -18,6 +18,8 @@ def settings() -> Settings:
         retake_multiplier=1.5,
         max_credits=30,
         log_level="INFO",
+        database_url="sqlite://",  # in-memory: tests never touch assistant.db
+        session_salt="test-salt",
     )
 
 
