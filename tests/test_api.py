@@ -44,7 +44,9 @@ def test_rate_limit(client):
 
 
 def test_feedback_roundtrip(client):
-    r = client.post("/v1/feedback", json={"request_id": "abc123", "rating": 1})
+    # Lab 5: feedback must refer to a real answer, so ask a question first.
+    request_id = client.post("/v1/chat", json={"message": "hello"}).json()["request_id"]
+    r = client.post("/v1/feedback", json={"request_id": request_id, "rating": 1})
     assert r.status_code == 201 and r.json()["id"] == 1
     assert client.get("/v1/feedback").status_code == 401
     listed = client.get("/v1/feedback", headers={"X-API-Key": "secret-admin"})
