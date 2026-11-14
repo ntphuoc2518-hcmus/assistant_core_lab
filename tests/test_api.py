@@ -2,6 +2,7 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
+from assistant_api.db import Repository, init_db, make_engine
 from assistant_api.main import create_app
 from assistant_api.weather import WeatherClient
 
@@ -14,9 +15,16 @@ def weather_with(handler) -> WeatherClient:
 
 
 @pytest.fixture
-def client(settings, service):
+def repo():
+    engine = make_engine("sqlite://")
+    init_db(engine)
+    return Repository(engine, "test-salt")
+
+
+@pytest.fixture
+def client(settings, service, repo):
     settings = settings.model_copy(update={"api_admin_key": "secret-admin", "rate_limit_per_min": 5})
-    app = create_app(settings, service, weather_with(lambda req: httpx.Response(200, json=OK_JSON)))
+    app = create_app(settings, service, weather_with(lambda req: httpx.Response(200, json=OK_JSON)), repo)
     return TestClient(app)
 
 
@@ -37,16 +45,14 @@ def test_chat_validation_error(client):
     assert r.status_code == 422 and r.json()["error"]["code"] == "invalid_request"
 
 
-@pytest.mark.skip(reason="BONUS task — remove this line when you add rate limiting")
 def test_rate_limit(client):
     codes = [client.post("/v1/chat", json={"message": "hi"}).status_code for _ in range(6)]
     assert codes[-1] == 429
 
 
 def test_feedback_roundtrip(client):
-    # Lab 5: feedback must refer to a real answer, so ask a question first.
-    request_id = client.post("/v1/chat", json={"message": "hello"}).json()["request_id"]
-    r = client.post("/v1/feedback", json={"request_id": request_id, "rating": 1})
+    rid = client.post("/v1/chat", json={"message": "hi"}).json()["request_id"]
+    r = client.post("/v1/feedback", json={"request_id": rid, "rating": 1})
     assert r.status_code == 201 and r.json()["id"] == 1
     assert client.get("/v1/feedback").status_code == 401
     listed = client.get("/v1/feedback", headers={"X-API-Key": "secret-admin"})
