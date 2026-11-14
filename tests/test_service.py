@@ -1,58 +1,30 @@
-from pathlib import Path
-
 import pytest
+from pydantic import ValidationError
 
-from assistant_core.config import Settings
-from assistant_core.knowledge import Handbook, OfficeDirectory
-from assistant_core.models import Message
-from assistant_core.responder import TemplateResponder
-from assistant_core.service import AssistantService
+from assistant_core.models import Intent, Message
+from assistant_core.responder import StubLLMResponder
 
 
-@pytest.fixture
-def sample_service(tmp_path: Path) -> AssistantService:
-    """Fixture khởi tạo AssistantService chuẩn dữ liệu cho các bài test."""
-    offices_csv = tmp_path / "offices.csv"
-    offices_csv.write_text(
-        "name,room,hours\nAcademic,A101,8am-5pm\nLibrary,B202,7am-9pm\n",
-        encoding="utf-8",
-    )
-
-    handbook_json = tmp_path / "handbook.json"
-    handbook_json.write_text(
-        '[{"id": "R1", "title": "Thesis", "text": "Thesis regulations..."}]',
-        encoding="utf-8",
-    )
-
-    settings = Settings(data_dir=tmp_path)
-    offices = OfficeDirectory.from_csv(offices_csv)
-    handbook = Handbook.from_json(handbook_json)
-    responder = TemplateResponder()
-
-    return AssistantService(
-        settings=settings,
-        offices=offices,
-        handbook=handbook,
-        responder=responder,
-    )
+def test_fee_answer(service):
+    r = service.handle(Message(text="tuition for 18 credits and 2 retake"))
+    assert r.intent is Intent.FEE and "9,450,000" in r.answer
 
 
-def test_service_greeting(sample_service: AssistantService):
-    res = sample_service.handle(Message(text="hello"))
-    assert res.answer is not None
-    assert len(res.answer) > 0
+def test_rule_has_source(service):
+    r = service.handle(Message(text="can I register my thesis with 118 credits"))
+    assert r.intent is Intent.RULE and r.sources[0].id == "H26-5.3"
 
 
-def test_service_fee(sample_service: AssistantService):
-    res = sample_service.handle(Message(text="tuition for 15 credits"))
-    assert res.answer is not None
+def test_fallback_when_provider_fails(service):
+    service.responder = StubLLMResponder(fail=True)
+    r = service.handle(Message(text="thesis registration credits"))
+    assert r.degraded and r.sources
 
 
-def test_service_office(sample_service: AssistantService):
-    res = sample_service.handle(Message(text="where is Academic office?"))
-    assert "A101" in res.answer or "Academic" in res.answer
+def test_unknown(service):
+    assert service.handle(Message(text="what is the weather")).intent is Intent.UNKNOWN
 
 
-def test_service_rule(sample_service: AssistantService):
-    res = sample_service.handle(Message(text="thesis regulations"))
-    assert res.answer is not None
+def test_empty_message_rejected():
+    with pytest.raises(ValidationError):
+        Message(text="")
