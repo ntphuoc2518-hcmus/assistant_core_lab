@@ -9,7 +9,8 @@ CLI demos (run from repo root with the package installed in editable mode):
     Your tuition is 9,450,000 VND
 
     $ python -m assistant_core "thesis regulations"
-    Based on 'Thesis registration': Students may register a thesis when they have at least 120 accumulated credits and a GPA of at least 2.0.
+    Based on 'Thesis registration': Students may register a thesis when they
+    have at least 120 accumulated credits and a GPA of at least 2.0.
       [H26-5.3] Thesis registration
 """
 import logging
