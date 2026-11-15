@@ -26,10 +26,14 @@ class Settings(BaseModel):
     database_url: str = "sqlite:///assistant.db"
     session_salt: str = Field(default="", repr=False)  # never printed
 
+    # Lab 6 - Retrieval
+    retrieval_min_score: float = 2.0
+
 
 def load_settings(env_file: str | None = ".env") -> Settings:
     if env_file:
         load_dotenv(env_file, override=False)
+
     s = Settings(
         data_dir=Path(os.getenv("ASSISTANT_DATA_DIR", "data")),
         llm_provider=os.getenv("LLM_PROVIDER", "stub"),
@@ -40,13 +44,21 @@ def load_settings(env_file: str | None = ".env") -> Settings:
         log_level=os.getenv("LOG_LEVEL", "INFO"),
         api_admin_key=os.getenv("API_ADMIN_KEY") or None,
         rate_limit_per_min=int(os.getenv("RATE_LIMIT_PER_MIN", "30")),
-        weather_url=os.getenv("WEATHER_URL", "https://api.open-meteo.com/v1/forecast"),
+        weather_url=os.getenv(
+            "WEATHER_URL",
+            "https://api.open-meteo.com/v1/forecast",
+        ),
         campus_lat=float(os.getenv("CAMPUS_LAT", "10.7626")),
         campus_lon=float(os.getenv("CAMPUS_LON", "106.6822")),
         weather_timeout_s=float(os.getenv("WEATHER_TIMEOUT_S", "3.0")),
         database_url=os.getenv("DATABASE_URL", "sqlite:///assistant.db"),
         session_salt=os.getenv("SESSION_SALT", ""),
+        retrieval_min_score=float(os.getenv("RETRIEVAL_MIN_SCORE", "2.0")),
     )
+
     if s.llm_provider != "stub" and not s.llm_api_key:
-        raise ConfigError(f"LLM_API_KEY is required when LLM_PROVIDER={s.llm_provider!r}")
+        raise ConfigError(
+            f"LLM_API_KEY is required when LLM_PROVIDER={s.llm_provider!r}"
+        )
+
     return s
