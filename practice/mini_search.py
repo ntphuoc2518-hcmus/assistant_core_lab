@@ -1,6 +1,5 @@
 import re
 
-
 DOCS = {
     "D1": "Students may register a thesis with at least 120 credits and a GPA of 2.0.",
     "D2": "Retake credits are charged at 1.5 times the normal credit rate.",
