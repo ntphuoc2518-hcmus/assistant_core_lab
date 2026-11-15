@@ -1,13 +1,26 @@
+"""Entry point for the assistant_core package.
+
+CLI demos (run from repo root with the package installed in editable mode):
+
+    $ python -m assistant_core "hello"
+    Hello! I can help with offices, fees and rules.
+
+    $ python -m assistant_core "tuition for 18 credits and 2 retake"
+    Your tuition is 9,450,000 VND
+
+    $ python -m assistant_core "thesis regulations"
+    Based on 'Thesis registration': Students may register a thesis when they
+    have at least 120 accumulated credits and a GPA of at least 2.0.
+      [H26-5.3] Thesis registration
+"""
 import logging
 import sys
 import time
 
 from assistant_core.config import load_settings
-from assistant_core.knowledge import Handbook, OfficeDirectory
 from assistant_core.logging_setup import setup_logging
 from assistant_core.models import Message
-from assistant_core.responder import StubLLMResponder
-from assistant_core.service import AssistantService
+from assistant_core.service import build_service
 
 logger = logging.getLogger("assistant_core")
 
@@ -17,17 +30,13 @@ def main() -> None:
         print('Usage: python -m assistant_core "<question>"', file=sys.stderr)
         sys.exit(1)
 
-    # Cải tiến: gộp toàn bộ tham số phía sau để tránh lỗi quên ngoặc kép
+    # Merge all trailing args so the user can omit quotes
     user_text = " ".join(sys.argv[1:])
 
     settings = load_settings()
     setup_logging(settings.log_level)
 
-    offices = OfficeDirectory.from_csv(settings.data_dir / "offices.csv")
-    handbook = Handbook.from_json(settings.data_dir / "handbook.json")
-    responder = StubLLMResponder()
-
-    service = AssistantService(settings, offices, handbook, responder)
+    service = build_service(settings)
 
     start_time = time.perf_counter()
     msg = Message(text=user_text)
@@ -49,6 +58,9 @@ def main() -> None:
     )
 
     print(res.answer)
+    if res.sources:
+        for src in res.sources:
+            print(f"  [{src.id}] {src.title}")
 
 
 if __name__ == "__main__":
