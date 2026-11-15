@@ -95,7 +95,41 @@ The `tests/` directory contains automated tests:
 
 Pytest runs the automated tests, and Ruff checks code quality. GitHub Actions can run these checks automatically when changes are pushed or pull requests are opened.
 
-## 8. Design Principles
+## 8. RAG Flow (Retrieval-Augmented Generation)
+
+When the router classifies a message as `RULE` intent, the application uses a lightweight retrieve-then-generate pipeline:
+
+```
+User message
+     │
+     ▼
+ router.py  ──────── Intent.RULE ─────────────────────┐
+                                                       │
+                                               knowledge.py
+                                           Handbook.search()
+                                           (keyword match over
+                                            handbook.json rules)
+                                                       │
+                                               Rule {id, title, text}
+                                                       │
+                                           ┌───────────┴───────────┐
+                                     responder.py           responder.py
+                                   StubLLMResponder       TemplateResponder
+                                   .explain(q, rule)       (fallback)
+                                           │                       │
+                                           └───────────┬───────────┘
+                                                       │
+                                               Response {answer,
+                                                sources, degraded}
+```
+
+**Retrieve:** `Handbook.search()` scans all rules and returns the first whose title words appear in the user message, falling back to the first rule when no keyword matches.
+
+**Augment:** The retrieved `Rule` object (id, title, full text) is passed alongside the original question to the responder, grounding the answer in real data.
+
+**Generate:** `StubLLMResponder.explain()` formats the rule as a natural-language answer. If the provider raises `ProviderError`, `service.py` catches it and delegates to `TemplateResponder` as a degraded fallback, ensuring the user always receives an answer.
+
+## 9. Design Principles
 
 - **Separation of concerns:** Each module has a focused responsibility.
 - **Maintainability:** Individual components can be modified with less impact on unrelated modules.
