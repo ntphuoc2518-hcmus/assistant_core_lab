@@ -1,0 +1,4 @@
+{"id": "C01", "question": "hello", "expected_intent": "greeting", "expected_answer_contains": "Hello"}
+{"id": "C02", "question": "tuition for 18 credits and 2 retake", "expected_intent": "fee", "expected_answer_contains": "VND"}
+{"id": "C03", "question": "where is Training Office?", "expected_intent": "office", "expected_answer_contains": "I.101"}
+{"id": "C04", "question": "thesis regulations", "expected_intent": "rule", "expected_answer_contains": "Thesis"}

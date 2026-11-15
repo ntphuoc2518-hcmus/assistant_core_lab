@@ -21,7 +21,7 @@ from assistant_core.models import Message
 from assistant_core.responder import StubLLMResponder, TemplateResponder
 from assistant_core.service import AssistantService
 
-CASES_FILE = Path(__file__).parent / "cases.jsonl"
+CASES_FILE = Path(__file__).parent / "compare_cases.jsonl"  # eval/cases.jsonl is the Lab 6 eval set
 DATA_DIR = Path(__file__).parent.parent / "data"
 
 
