@@ -4,9 +4,9 @@ import pytest
 
 from assistant_core.config import Settings
 from assistant_core.knowledge import Handbook, OfficeDirectory
-from assistant_core.models import Message
+from assistant_core.models import Intent, Message, Response, Source
 from assistant_core.responder import TemplateResponder
-from assistant_core.service import AssistantService
+from assistant_core.service import AssistantService, build_service
 
 
 @pytest.fixture
@@ -56,3 +56,41 @@ def test_service_office(sample_service: AssistantService):
 def test_service_rule(sample_service: AssistantService):
     res = sample_service.handle(Message(text="thesis regulations"))
     assert res.answer is not None
+
+
+def test_response_defaults():
+    resp = Response(answer="test", intent=Intent.GREETING)
+    assert resp.path == "deterministic"
+    assert resp.escalate is False
+    assert resp.confidence is None
+
+
+class DummyRagAnswerer:
+    def answer(self, question: str) -> Response:
+        return Response(
+            answer="RAG answered: " + question,
+            intent=Intent.RULE,
+            sources=[Source(id="H26#5.3", title="Thesis")],
+            path="llm",
+            confidence=0.9,
+        )
+
+
+def test_service_rewire_rag(sample_service: AssistantService):
+    sample_service.rag = DummyRagAnswerer()
+    res = sample_service.handle(Message(text="can I register my thesis with 118 credits"))
+    assert res.intent is Intent.RULE
+    assert res.path == "llm"
+    assert "RAG answered" in res.answer
+    assert any(s.id == "H26#5.3" for s in res.sources)
+
+
+def test_build_service(tmp_path: Path):
+    offices_csv = tmp_path / "offices.csv"
+    offices_csv.write_text("name,room,hours\nAcademic,A101,8am-5pm\n", encoding="utf-8")
+    handbook_json = tmp_path / "handbook.json"
+    handbook_json.write_text("[]", encoding="utf-8")
+
+    settings = Settings(data_dir=tmp_path)
+    svc = build_service(settings)
+    assert isinstance(svc, AssistantService)

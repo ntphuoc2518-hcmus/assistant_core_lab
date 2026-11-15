@@ -41,3 +41,6 @@ class Response(BaseModel):
     intent: Intent | str = Intent.UNKNOWN
     sources: list[Source] = []
     degraded: bool = False
+    escalate: bool = False
+    path: str = "deterministic"
+    confidence: float | None = None
