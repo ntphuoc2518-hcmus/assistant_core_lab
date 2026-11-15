@@ -25,6 +25,7 @@ class Settings(BaseModel):
     # Lab 5 persistence
     database_url: str = "sqlite:///assistant.db"
     session_salt: str = Field(default="", repr=False)  # never printed
+    llm_model: str = "llama3.2"
 
     # Lab 6 - Retrieval
     retrieval_min_score: float = 2.0
@@ -38,6 +39,7 @@ def load_settings(env_file: str | None = ".env") -> Settings:
         data_dir=Path(os.getenv("ASSISTANT_DATA_DIR", "data")),
         llm_provider=os.getenv("LLM_PROVIDER", "stub"),
         llm_api_key=os.getenv("LLM_API_KEY") or None,
+        llm_model=os.getenv("LLM_MODEL", "llama3.2"),
         credit_rate_vnd=int(os.getenv("CREDIT_RATE_VND", "450000")),
         retake_multiplier=float(os.getenv("RETAKE_MULTIPLIER", "1.5")),
         max_credits=int(os.getenv("MAX_CREDITS", "30")),
@@ -55,8 +57,7 @@ def load_settings(env_file: str | None = ".env") -> Settings:
         session_salt=os.getenv("SESSION_SALT", ""),
         retrieval_min_score=float(os.getenv("RETRIEVAL_MIN_SCORE", "2.0")),
     )
-
-    if s.llm_provider != "stub" and not s.llm_api_key:
+    if s.llm_provider == "openai" and not s.llm_api_key:
         raise ConfigError(
             f"LLM_API_KEY is required when LLM_PROVIDER={s.llm_provider!r}"
         )
