@@ -1,9 +1,19 @@
 import csv
 import json
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
 from .errors import DataError
+
+# Words too common to say which rule a question is about.
+_STOP = frozenset({"a", "an", "the", "of", "to", "in", "on", "for", "and", "or", "my", "i", "is", "can", "do", "how"})
+
+
+def _words(text: str) -> set[str]:
+    """Whole lowercase words, minus stop words, with a plural "s" removed ("credits" -> "credit")."""
+    words = re.findall(r"\w+", text.lower())
+    return {w[:-1] if len(w) > 4 and w.endswith("s") else w for w in words if w not in _STOP}
 
 
 @dataclass(frozen=True)
@@ -59,8 +69,14 @@ class Handbook:
         return cls(rules)
 
     def search(self, text: str) -> Rule | None:
-        t = text.lower()
+        """Return the rule whose title shares the most whole words with ``text``, or None if none match.
+
+        Ties go to the rule listed first in the handbook.
+        """
+        query = _words(text)
+        best, best_score = None, 0
         for rule in self._rules:
-            if any(word in t for word in rule.title.lower().split()):
-                return rule
-        return self._rules[0] if self._rules else None
+            score = len(query & _words(rule.title))
+            if score > best_score:
+                best, best_score = rule, score
+        return best
