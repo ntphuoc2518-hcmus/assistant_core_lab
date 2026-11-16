@@ -4,6 +4,8 @@ from fastapi.testclient import TestClient
 
 from assistant_api.main import create_app
 from assistant_api.weather import WeatherClient
+from assistant_core.models import Intent, Response
+from assistant_core.service import build_service
 
 OK_JSON = {"current": {"time": "2026-10-05T09:00", "temperature_2m": 31.2, "weather_code": 3, "wind_speed_10m": 8.5}}
 
@@ -30,6 +32,7 @@ def test_chat_fee(client):
     assert r.status_code == 200
     body = r.json()
     assert body["intent"] == "fee" and "9,450,000" in body["answer"] and body["request_id"]
+    assert body["escalate"] is False
 
 
 def test_chat_validation_error(client):
@@ -84,3 +87,55 @@ def test_weather_stale_cache_when_upstream_fails():
     w.cache_ttl_s = 0  # force a refresh on the second call
     assert not w.current().stale
     assert w.current().stale
+
+def test_chat_escalates_for_unknown_question(settings):
+    rag_service = build_service(settings)
+
+    app = create_app(
+        settings,
+        rag_service,
+        weather_with(lambda req: httpx.Response(200, json=OK_JSON)),
+    )
+
+    r = TestClient(app).post(
+        "/v1/chat",
+        json={"message": "what is the capital of France"},
+    )
+
+    assert r.status_code == 200
+
+    body = r.json()
+
+    assert body["intent"] == "unknown"
+    assert body["escalate"] is True
+    assert body["degraded"] is False
+
+def test_chat_degraded_still_returns_response(settings, service, monkeypatch):
+    monkeypatch.setattr(
+        service,
+        "handle",
+        lambda message: Response(
+            answer="Fallback answer",
+            intent=Intent.RULE,
+            degraded=True,
+        ),
+    )
+
+    app = create_app(
+        settings,
+        service,
+        weather_with(lambda req: httpx.Response(200, json=OK_JSON)),
+    )
+
+    r = TestClient(app).post(
+        "/v1/chat",
+        json={"message": "Explain the academic rules"},
+    )
+
+    assert r.status_code == 200
+
+    body = r.json()
+
+    assert body["answer"] == "Fallback answer"
+    assert body["degraded"] is True
+    assert body["escalate"] is False
