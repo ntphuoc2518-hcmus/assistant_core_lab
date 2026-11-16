@@ -136,3 +136,37 @@ User message
 - **Testability:** Utility functions, routing logic, and service behavior can be tested separately.
 - **Extensibility:** Additional intents, data sources, and response providers can be introduced as the project evolves.
 - **Error resilience:** Specific exceptions and fallback responses help the application handle expected failures consistently.
+
+## 10. UI & API System Boundary (Lab 07 — `v0.7-mvp`)
+
+### System Overview Diagram
+
+```text
+[User / Browser (:8501)]
+           │
+           ▼
+┌──────────────────────────────────────────┐
+│   Streamlit Frontend (ui/app.py)         │  Manages st.session_state, validates input,
+│   + ui/logic.py                          │  formats sources, shows status notes & 👍/👎
+└────────────────────┬─────────────────────┘
+                     │  HTTP / JSON via ui/api_client.py (httpx)
+                     ▼  (POST /v1/chat, POST /v1/feedback, GET /health)
+┌──────────────────────────────────────────┐
+│   FastAPI Backend (:8000)                │  schemas.py (escalate: bool), admin auth,
+│   (src/assistant_api/)                   │  hashes session_id with SESSION_SALT
+└──────────┬───────────────────────┬───────┘
+           │                       │
+           ▼                       ▼
+     [SQLite DB]          [assistant_core] ──► Data (offices.csv, handbook.json), RAG, LLM
+```
+
+### Decoupling Boundary & Dependency Rules
+
+- **Strict HTTP/JSON Contract:** The `ui/` package operates purely as an HTTP client (`ui/api_client.py` using `httpx`) communicating with the FastAPI service over `ASSISTANT_API_URL` (`POST /v1/chat`, `POST /v1/feedback`, `GET /health`).
+- **Zero Direct Imports:** Modules inside `ui/` **must never import** from `assistant_core` or `assistant_api`. Keeping frontend and backend decoupled allows each layer to be tested, scaled, or replaced independently.
+
+### Lab 07 Runtime & Feedback Flows
+
+1. **Graceful Connection Handling:** If the backend is unreachable or `ASSISTANT_API_URL` points to an inactive port, `ui/api_client.py` catches transport/HTTP errors and renders a user-friendly alert without crashing the Streamlit session.
+2. **Escalation & Degraded States (`ui/logic.py`):** When a query falls outside official handbook/office records (`escalate: true`), the UI displays a referral note directing the student to the *Training Office (room I.101)*. When the LLM provider falls back to template generation (`degraded: true`), the UI notifies the user accordingly.
+3. **Turn-Level User Feedback (`POST /v1/feedback`):** Each assistant response exposes 👍 (`+1`) and 👎 (`-1`) controls bound to its `request_id`, persisting feedback ratings in SQLite for quality evaluation.
