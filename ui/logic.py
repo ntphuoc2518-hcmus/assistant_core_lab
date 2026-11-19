@@ -27,11 +27,16 @@ def validate_input(text: str) -> str | None:
 
 
 def format_sources(sources: list[dict]) -> str:
-    """'Sources: H26#5.3 — 5.3 Thesis registration' or '' if none."""
-    # TODO L1 (3 lines): [DONE]
+    """Nicer source display: title first with chunk-ID in parentheses.
+
+    Example:
+        "📄 5.3 Thesis registration (H26#5.3); 📄 6.1 GPA rules (H26#6.1)"
+    Returns '' when there are no sources.
+    """
     if not sources:
         return ""
-    return "Sources: " + "; ".join(f"{s['id']} — {s['title']}" for s in sources)
+    parts = [f"📄 {s['title']} ({s['id']})" for s in sources]
+    return "Sources: " + "; ".join(parts)
 
 
 def status_note(result: ChatResult) -> str | None:

@@ -48,7 +48,66 @@ def test_validate_input():
 
 def test_format_sources():
     assert format_sources([]) == ""
-    assert format_sources(OK["sources"]) == "Sources: S26#1 — 1 Library borrowing"
+    # Bonus: nicer display — title first, ID in parentheses, with 📄 emoji
+    result = format_sources(OK["sources"])
+    assert result == "Sources: 📄 1 Library borrowing (S26#1)"
+
+
+def test_format_sources_multiple():
+    sources = [
+        {"id": "H26#5.3", "title": "5.3 Thesis registration"},
+        {"id": "H26#6.1", "title": "6.1 GPA requirements"},
+    ]
+    result = format_sources(sources)
+    assert result.startswith("Sources:")
+    assert "📄 5.3 Thesis registration (H26#5.3)" in result
+    assert "📄 6.1 GPA requirements (H26#6.1)" in result
+
+
+# ---- E.2: Emoji and Unicode input must not crash validate_input or the client ----
+
+def test_e2_emoji_input_accepted():
+    """E.2 — emoji characters must pass validate_input (not too long, not empty)."""
+    assert validate_input("What about 😊 requirements for GPA?") is None
+    assert validate_input("🎓📚 deadline thesis") is None
+
+
+def test_e2_vietnamese_input_accepted():
+    """E.2 — Vietnamese diacritics must pass validate_input."""
+    assert validate_input("học phí 15 tín chỉ") is None
+    assert validate_input("Thời gian đăng ký luận văn là khi nào?") is None
+
+
+def test_e2_smart_quotes_accepted():
+    """E.2 — smart / curly quotes must pass validate_input."""
+    assert validate_input("\u201cCan I register thesis today?\u201d") is None
+
+
+def test_e2_multiple_emoji_sequences_accepted():
+    """E.2 — multiple consecutive emoji must not exceed length erroneously."""
+    text = "🎓" * 10 + " when is thesis deadline?"
+    assert validate_input(text) is None
+
+
+def test_e2_emoji_sent_to_api():
+    """E.2 — emoji payload must be forwarded to the API unchanged (JSON-safe encoding)."""
+    received: list[bytes] = []
+
+    def capture(req: httpx.Request) -> httpx.Response:
+        received.append(req.content)
+        return httpx.Response(200, json={**OK, "answer": "ok"})
+
+    client_with(capture).ask("🎓 thesis deadline?", "s1")
+    assert len(received) == 1
+    # httpx may use \uXXXX escaping or raw UTF-8 — both are valid JSON; check the decoded JSON
+    import json
+    parsed = json.loads(received[0].decode("utf-8"))
+    assert parsed["message"] == "🎓 thesis deadline?"
+
+
+def test_e2_unicode_thai_accepted():
+    """E.2 — non-Latin script (Thai) must also be accepted."""
+    assert validate_input("ลงทะเบียนวิทยานิพนธ์เมื่อไหร่?") is None
 
 
 def test_status_note():
