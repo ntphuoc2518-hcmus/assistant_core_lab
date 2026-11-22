@@ -26,7 +26,7 @@ def validate_input(text: str) -> str | None:
     return None
 
 
-def format_sources(sources: list[dict]) -> str:
+def format_sources_rich(sources: list[dict]) -> str:
     """Nicer source display: title first with chunk-ID in parentheses.
 
     Example:
@@ -38,6 +38,11 @@ def format_sources(sources: list[dict]) -> str:
     parts = [f"📄 {s['title']} ({s['id']})" for s in sources]
     return "Sources: " + "; ".join(parts)
 
+def format_sources(sources: list[dict]) -> str:
+    """'Sources: H26#5.3 — 5.3 Thesis registration' or '' if none."""
+    if not sources:
+        return ""
+    return "Sources: " + "; ".join(f"{s['id']} — {s['title']}" for s in sources)
 
 def status_note(result: ChatResult) -> str | None:
     """A short note shown under the answer, explaining special situations."""

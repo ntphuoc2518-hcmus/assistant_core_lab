@@ -44,7 +44,7 @@
 | Step | What the user did | What we observed |
 |------|-------------------|-----------------|
 | 1 | Typed using mobile keyboard with autocorrect | No validation error; accepted fine. |
-| 2 | Typed "học phí 15 tín chỉ" (Vietnamese, E.2) | Server returned the tuition calculation correctly. Unicode OK (E.2 ✅). |
+| 2 | Typed "học phí 15 tín chỉ" (Vietnamese, E.2) | "Assistant did not understand Vietnamese and escalated to the Training Office |
 | 3 | Tried to scroll back through history | Chat history scrolled normally on mobile. |
 | 4 | Long-pressed a source citation | Nothing happened — user expected a link to the actual rule. |
 | **Pain point** | Source citations are plain text, not clickable links. User expected tap-to-open. |

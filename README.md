@@ -1,27 +1,3 @@
-﻿# Academic Assistant MVP (`v0.7-mvp`)
-
-Hệ thống trợ lý học vụ gồm **2 tiến trình chạy song song**, tách biệt hoàn toàn giữa giao diện người dùng và dịch vụ xử lý nghiệp vụ:
-- **Backend API (`FastAPI`):** Chạy mặc định tại `http://127.0.0.1:8000` (Swagger Docs: `http://127.0.0.1:8000/docs`).
-- **Frontend UI (`Streamlit`):** Chạy mặc định tại `http://localhost:8501`, giao tiếp với Backend qua HTTP/JSON.
-
----
-
-## 1. Cài đặt môi trường
-
-### Windows (PowerShell)
-```powershell
-# 1. Clone repository và di chuyển vào thư mục gốc dự án
-git clone [https://github.com/ntphuoc2518-hcmus/assistant_core_lab.git](https://github.com/ntphuoc2518-hcmus/assistant_core_lab.git)
-cd assistant_core_lab
-
-# 2. Tạo và kích hoạt môi trường ảo
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-
-# 3. Cài đặt thư viện phụ thuộc và gói cục bộ ở chế độ editable
-pip install -r requirements.txt
-pip install -e .
-@'
 # Academic Assistant MVP (`v0.7-mvp`)
 
 Hệ thống trợ lý học vụ gồm **2 tiến trình chạy song song**, tách biệt hoàn toàn giữa giao diện người dùng và dịch vụ xử lý nghiệp vụ:
@@ -33,9 +9,10 @@ Hệ thống trợ lý học vụ gồm **2 tiến trình chạy song song**, t�
 ## 1. Cài đặt môi trường
 
 ### Windows (PowerShell)
+
 ```powershell
 # 1. Clone repository và di chuyển vào thư mục gốc dự án
-git clone [https://github.com/ntphuoc2518-hcmus/assistant_core_lab.git](https://github.com/ntphuoc2518-hcmus/assistant_core_lab.git)
+git clone https://github.com/ntphuoc2518-hcmus/assistant_core_lab.git
 cd assistant_core_lab
 
 # 2. Tạo và kích hoạt môi trường ảo
@@ -50,7 +27,7 @@ pip install -e .
 ### macOS / Linux (Bash / Zsh)
 ```bash
 # 1. Clone repository và di chuyển vào thư mục gốc dự án
-git clone [https://github.com/ntphuoc2518-hcmus/assistant_core_lab.git](https://github.com/ntphuoc2518-hcmus/assistant_core_lab.git)
+git clone https://github.com/ntphuoc2518-hcmus/assistant_core_lab.git
 cd assistant_core_lab
 
 # 2. Tạo và kích hoạt môi trường ảo
@@ -115,12 +92,12 @@ Trình duyệt sẽ tự động mở giao diện tại `http://localhost:8501`.
   2. **Terminal 2:** Cập nhật `ASSISTANT_API_URL=http://127.0.0.1:8080` trong tệp `.env` (hoặc gán biến tạm trong phiên terminal hiện tại) rồi chạy lại UI:
      - *Windows PowerShell:*
        ```powershell
-       $env:ASSISTANT_API_URL = "[http://127.0.0.1:8080](http://127.0.0.1:8080)"
+       $env:ASSISTANT_API_URL = "http://127.0.0.1:8080"
        streamlit run ui/app.py
        ```
      - *macOS / Linux:*
        ```bash
-       ASSISTANT_API_URL=[http://127.0.0.1:8080](http://127.0.0.1:8080) streamlit run ui/app.py
+       ASSISTANT_API_URL=http://127.0.0.1:8080 streamlit run ui/app.py
        ```
 
 ### PowerShell chặn chạy script kích hoạt `.venv`
