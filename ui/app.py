@@ -26,6 +26,8 @@ if "messages" not in st.session_state:
 if "rated" not in st.session_state:
     st.session_state.rated = set()
 
+if "toast" in st.session_state:
+    st.toast(st.session_state.pop("toast"))
 st.title("🎓 FIT Study Assistant")
 if not client.healthy():
     st.error("The assistant backend is not reachable. Start it with: uvicorn assistant_api.main:create_app --factory")
@@ -51,12 +53,14 @@ for i, m in enumerate(st.session_state.messages):
             if c1.button("👍", key=f"up{i}"):
                 client.send_feedback(rid, 1)
                 st.session_state.rated.add(rid)
-                st.toast("Thanks for your feedback!")
+                st.session_state.toast = "Thanks for your feedback!"
+                st.rerun()
             # TODO F1 (4 lines): [DONE]
             if c2.button("👎", key=f"down{i}"):
                 client.send_feedback(rid, -1)
                 st.session_state.rated.add(rid)
-                st.toast("Thanks — we will look at this answer.")
+                st.session_state.toast = "Thanks for your feedback!"
+                st.rerun()
 
 # ---- new question ----------------------------------------------------------------
 question = st.chat_input("Ask about fees, offices or the handbook…") or st.session_state.pop("pending", None)
