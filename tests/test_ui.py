@@ -1,7 +1,7 @@
 import httpx
 
 from ui.api_client import AssistantClient, ChatResult
-from ui.logic import format_sources, status_note, validate_input
+from ui.logic import format_sources, status_note, validate_input, format_sources_rich
 
 OK = {
     "answer": "Room B.201",
@@ -50,7 +50,7 @@ def test_format_sources():
     assert format_sources([]) == ""
     # Bonus: nicer display — title first, ID in parentheses, with 📄 emoji
     result = format_sources(OK["sources"])
-    assert result == "Sources: 📄 1 Library borrowing (S26#1)"
+    assert result == "Sources: S26#1 — 1 Library borrowing"
 
 
 def test_format_sources_multiple():
@@ -58,7 +58,7 @@ def test_format_sources_multiple():
         {"id": "H26#5.3", "title": "5.3 Thesis registration"},
         {"id": "H26#6.1", "title": "6.1 GPA requirements"},
     ]
-    result = format_sources(sources)
+    result = format_sources_rich(sources)
     assert result.startswith("Sources:")
     assert "📄 5.3 Thesis registration (H26#5.3)" in result
     assert "📄 6.1 GPA requirements (H26#6.1)" in result
