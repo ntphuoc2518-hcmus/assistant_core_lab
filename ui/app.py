@@ -66,8 +66,13 @@ if question:
         st.warning(problem)
     else:
         st.session_state.messages.append({"role": "user", "content": question})
-        with st.spinner("Thinking…"):
+        # Bonus: show a live "typing…" placeholder while the backend is working,
+        # so users on slow connections know the app hasn't frozen.
+        with st.chat_message("assistant"):
+            typing_placeholder = st.empty()
+            typing_placeholder.markdown("_typing…_ ⏳")
             result = client.ask(question, st.session_state.session_id)
+            typing_placeholder.empty()
         if result.ok:
             st.session_state.messages.append(
                 {
