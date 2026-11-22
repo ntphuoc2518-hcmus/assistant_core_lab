@@ -10,3 +10,6 @@
 - [x] The page says it is an AI assistant
 - [x] Text is readable (size, contrast); buttons have clear labels
 - [x] Works on a phone-width window
+
+---
+*Verified by Hà Xuân Tình (`tinhha777qz-dev`) — 6/6 D.4 states tested and documented in [`docs/lab7/state_check.md`](../docs/lab7/state_check.md).*
