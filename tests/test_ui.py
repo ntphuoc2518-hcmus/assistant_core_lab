@@ -1,7 +1,7 @@
 import httpx
 
 from ui.api_client import AssistantClient, ChatResult
-from ui.logic import format_sources, status_note, validate_input, format_sources_rich
+from ui.logic import format_sources, format_sources_rich, status_note, validate_input
 
 OK = {
     "answer": "Room B.201",

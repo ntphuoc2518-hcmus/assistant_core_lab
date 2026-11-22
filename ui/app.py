@@ -13,7 +13,7 @@ import streamlit as st
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # so "import ui..." works under streamlit
 
 from ui.api_client import AssistantClient
-from ui.logic import EXAMPLES, WELCOME, format_sources, status_note, validate_input, format_sources_rich
+from ui.logic import EXAMPLES, WELCOME, format_sources_rich, status_note, validate_input
 
 st.set_page_config(page_title="FIT Study Assistant", page_icon="🎓")
 client = AssistantClient(os.getenv("ASSISTANT_API_URL", "http://127.0.0.1:8000"))
