@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import re
 
-
 PRIVATE_PATTERNS = [
     r"\b(my|a) (friend|classmate|roommate)'?s?\b.*\b(grade|score|gpa|result|phone|address)",
     r"\b(grade|score|gpa|result|phone|address)s?\b.*\b(of|for) (another|other) student",
