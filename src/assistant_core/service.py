@@ -35,10 +35,25 @@ class AssistantService:
         self.rag = rag
 
     def handle(self, msg: Message) -> Response:
-        # Guardrail runs before router
+                # Guardrail runs before router
         try:
-            from assistant_core.guard import PRIVATE_REPLY, is_private_request
+            from assistant_core.guard import (
+                INJECTION_REPLY,
+                PRIVATE_REPLY,
+                is_injection_request,
+                is_private_request,
+            )
 
+            # Block prompt injection attempts
+            if is_injection_request(msg.text):
+                return Response(
+                    answer=INJECTION_REPLY,
+                    intent=Intent.UNKNOWN,
+                    path="abstain",
+                    escalate=False,
+                )
+
+            # Block requests for private information
             if is_private_request(msg.text):
                 return Response(
                     answer=PRIVATE_REPLY,
@@ -46,6 +61,7 @@ class AssistantService:
                     path="abstain",
                     escalate=False,
                 )
+
         except ImportError:
             pass
 
