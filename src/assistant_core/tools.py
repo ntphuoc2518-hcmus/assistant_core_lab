@@ -6,7 +6,15 @@ from .errors import InvalidRequest
 
 
 def parse_credits(text: str) -> tuple[int, int]:
-    """Extract (credits, retake_credits) from text like 'fee for 18 credits and 2 retake'."""
+    """Extract (credits, retake_credits) from text like 'fee for 18 credits and 2 retake'.
+
+    Lab 8 mitigation #3: reject negative credit values explicitly so that an
+    attacker cannot pass '-5 credits' and receive a valid fee response.
+    """
+    # Check for negative numbers BEFORE stripping the sign with \d+
+    if re.search(r"-\s*\d+", text):
+        raise InvalidRequest("Credits must be a positive number.")
+
     retake = re.search(r"(\d+)\s*retake", text)
     numbers = [int(n) for n in re.findall(r"\d+", text)]
 

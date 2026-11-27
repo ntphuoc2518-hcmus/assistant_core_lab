@@ -57,6 +57,21 @@ class AssistantService:
                 intent=intent,
             )
 
+        # Lab 8 mitigation #3 (bonus): Vietnamese language → targeted reply
+        if intent is Intent.UNKNOWN:
+            try:
+                from assistant_core.guard import VIETNAMESE_REPLY, is_vietnamese_input
+
+                if is_vietnamese_input(msg.text):
+                    return Response(
+                        answer=VIETNAMESE_REPLY,
+                        intent=Intent.UNKNOWN,
+                        path="abstain",
+                        escalate=False,
+                    )
+            except ImportError:
+                pass
+
         if intent is Intent.FEE:
             try:
                 credits_val, retake_val = parse_credits(msg.text)
