@@ -4,11 +4,29 @@ import re
 
 from .errors import InvalidRequest
 
+WORD_TO_DIGIT: dict[str, str] = {
+    "zero": "0",
+    "one": "1",
+    "two": "2",
+    "three": "3",
+    "four": "4",
+    "five": "5",
+    "six": "6",
+    "seven": "7",
+    "eight": "8",
+    "nine": "9",
+    "ten": "10",
+}
+
 
 def parse_credits(text: str) -> tuple[int, int]:
     """Extract (credits, retake_credits) from text like 'fee for 18 credits and 2 retake'."""
-    retake = re.search(r"(\d+)\s*retake", text)
-    numbers = [int(n) for n in re.findall(r"\d+", text)]
+    normalized = text
+    for word, digit in WORD_TO_DIGIT.items():
+        normalized = re.sub(r"\b" + word + r"\b", digit, normalized, flags=re.IGNORECASE)
+
+    retake = re.search(r"(\d+)\s*retake", normalized, flags=re.IGNORECASE)
+    numbers = [int(n) for n in re.findall(r"\d+", normalized)]
 
     retake_n = int(retake.group(1)) if retake else 0
     others = numbers.copy()
