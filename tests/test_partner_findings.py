@@ -26,7 +26,6 @@ from assistant_core.models import Intent, Message
 from assistant_core.router import route
 from assistant_core.tools import parse_credits
 
-
 # ---------------------------------------------------------------------------
 # guard.py – privacy pattern extended to cover "of student <name>"
 # ---------------------------------------------------------------------------
